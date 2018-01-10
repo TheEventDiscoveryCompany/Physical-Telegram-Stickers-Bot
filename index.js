@@ -5,6 +5,11 @@ var app = express();
 var bodyParser = require('body-parser');
 var axios = require('axios');
 
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({
+  extended: true
+})); // for parsing application/x-www-form-urlencoded
+
 var port = process.env.PORT || 3000;
 var telegramApiUrl = "https://api.telegram.org/bot" + process.env.TELEGRAM_BOT_TOKEN + "/";
 
