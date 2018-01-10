@@ -3,7 +3,7 @@ require('dotenv').config();
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var axios = require('axios');
+var helpers = require('./Helpers');
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
@@ -11,7 +11,6 @@ app.use(bodyParser.urlencoded({
 })); // for parsing application/x-www-form-urlencoded
 
 var port = process.env.PORT || 3000;
-var telegramApiUrl = "https://api.telegram.org/bot" + process.env.TELEGRAM_BOT_TOKEN + "/";
 
 // Use a GUID for the URL to eliminate fake messages
 app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
@@ -21,23 +20,36 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         return res.end();
     }
 
+    var commands = helpers.getBotCommands(update.message);
+
+    // Start command, catch this first
+    if (commands.indexOf("/start") > -1) {
+        helpers.sendMessage(update.message.chat.id, "Started it right").then(response => {
+            res.end("started");
+        }).catch(err => {
+            res.end("Something went wrong");
+        });
+    }
+    else if (commands.indexOf("/help") > -1) {
+        helpers.sendMessage(update.message.chat.id, "I'm not very helpful").then(response => {
+            res.end("helped");
+        }).catch(err => {
+            res.end("Something went wrong");
+        });
+    }
+    else {
+        helpers.sendMessage(update.message.chat.id, "To start, type /start\n\nFor help using this bot, type /help").then(response => {
+            res.end("general");
+        }).catch(err => {
+            res.end("Something went wrong");
+        });
+    }
+
+
+    console.log(commands);
+
     console.log(update);
     console.log(update.message.entities);
-
-    axios.post(telegramApiUrl + 'sendMessage', {
-        chat_id: update.message.chat.id,
-        text: '🅱️ello 🅱️orld'
-      })
-        .then(response => {
-            console.log('Message Sent');
-            res.end('ok');
-        })
-        .catch(err => {
-            // ...and here if it was not
-            console.log('Error :', err);
-            res.end('Error :' + err);
-        });    
-
 });
 
 
