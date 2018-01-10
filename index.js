@@ -15,16 +15,14 @@ var telegramApiUrl = "https://api.telegram.org/bot" + process.env.TELEGRAM_BOT_T
 
 // Use a GUID for the URL to eliminate fake messages
 app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
-    var message = req.body;
+    var update = req.body;
 
-    if (!message) {
+    if (!update.message) {
         return res.end();
     }
 
-    console.log(message);
-
     axios.post(telegramApiUrl + 'sendMessage', {
-        chat_id: message.chat.id,
+        chat_id: update.message.chat.id,
         text: '🅱️ello 🅱️orld'
       })
         .then(response => {
