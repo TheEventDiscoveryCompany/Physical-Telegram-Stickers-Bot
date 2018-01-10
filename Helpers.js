@@ -1,6 +1,8 @@
 var axios = require('axios');
 
 module.exports = {
+    botUrlPrefix: "https://api.telegram.org/bot" + process.env.TELEGRAM_BOT_TOKEN + "/",
+
     getBotCommands: function(message) {
         var commands = [];
 
@@ -34,7 +36,7 @@ module.exports = {
     },
 
     sendTelegramRequest: function(endpoint, requestObj) {
-        var url = "https://api.telegram.org/bot" + process.env.TELEGRAM_BOT_TOKEN + "/" + endpoint;
+        var url = module.exports.botUrlPrefix + endpoint;
 
         return new Promise((resolve, reject) => {
             axios.post(url, requestObj).then(response => {

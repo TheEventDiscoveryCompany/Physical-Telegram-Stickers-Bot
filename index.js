@@ -48,7 +48,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
     // Parse a sent sticker
     else if (update.message.sticker != undefined) {
         console.log("sticker: ", update.message.sticker);
-        stickerUrl = "https://api.telegram.org/file/bot" + process.env.TELEGRAM_BOT_TOKEN + "/" + update.message.sticker.file_id;
+        stickerUrl = helpers.botUrlPrefix + update.message.sticker.file_id;
         console.log("sticker url ", stickerUrl);
         res.end("they stickered");
     }
