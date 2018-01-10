@@ -24,14 +24,14 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     // START CATCH COMMANDS
     if (commands.indexOf("/start") > -1) {
-        helpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished\n\nDidn't like the stickers you sent? Type /start to start over\n\nIf you're having trouble using me, maybe I can /help").then(response => {
+        helpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help").then(response => {
             res.end("they started");
         }).catch(err => {
             res.end("Something went wrong");
         });
     }
     else if (commands.indexOf("/done") > -1) {
-        helpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
+        helpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link.\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
             res.end("they done");
         }).catch(err => {
             res.end("Something went wrong");
@@ -39,7 +39,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     }
     else if (commands.indexOf("/help") > -1) {
-        helpers.sendMessage(update.message.chat.id, "At any time you can type /start to begin or start over\n\nWhen you are finished sending me stickers, type /done and I'll send you a link to order them\n\nType /help and I'll send you this exact message again\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
+        helpers.sendMessage(update.message.chat.id, "At any time you can type /start to begin or start over.\n\nWhen you are finished sending me stickers, type /done and I'll send you a link to order them.\n\nType /help and I'll send you this exact message again.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com.").then(response => {
             res.end("they helped");
         }).catch(err => {
             res.end("Something went wrong");
@@ -50,6 +50,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         console.log("sticker: ", update.message.sticker);
         stickerUrl = "https://api.telegram.org/file/bot" + process.env.TELEGRAM_BOT_TOKEN + "/" + update.message.sticker.file_id;
         console.log("sticker url ", stickerUrl);
+        res.end("they stickered");
     }
     // END CATCH COMMANDS
     else {
