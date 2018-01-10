@@ -31,7 +31,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         });
     }
     else if (commands.indexOf("/done") > -1) {
-        helpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link\n\nPS: That link won't disappear, your friends can use it too!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
+        helpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
             res.end("they done");
         }).catch(err => {
             res.end("Something went wrong");
