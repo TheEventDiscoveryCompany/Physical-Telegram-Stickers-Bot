@@ -24,21 +24,29 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     // Start command, catch this first
     if (commands.indexOf("/start") > -1) {
-        helpers.sendMessage(update.message.chat.id, "Started it right").then(response => {
-            res.end("started");
+        helpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished\n\nDidn't like the stickers you sent? Type /start to start over\n\nIf you're having trouble using me, maybe I can /help").then(response => {
+            res.end("they started");
         }).catch(err => {
             res.end("Something went wrong");
         });
     }
+    else if (commands.indexOf("/done") > -1) {
+        helpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link\n\nPS: That link won't disappear, your friends can use it too!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
+            res.end("they done");
+        }).catch(err => {
+            res.end("Something went wrong");
+        });
+
+    }
     else if (commands.indexOf("/help") > -1) {
-        helpers.sendMessage(update.message.chat.id, "I'm not very helpful").then(response => {
-            res.end("helped");
+        helpers.sendMessage(update.message.chat.id, "At any time you can type /start to begin or start over\n\nWhen you are finished sending me stickers, type /done and I'll send you a link to order them\n\nType /help and I'll send you this exact message again\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
+            res.end("they helped");
         }).catch(err => {
             res.end("Something went wrong");
         });
     }
     else {
-        helpers.sendMessage(update.message.chat.id, "To start, type /start\n\nFor help using this bot, type /help").then(response => {
+        helpers.sendMessage(update.message.chat.id, "🅱️ig 🅱️oi").then(response => {
             res.end("general");
         }).catch(err => {
             res.end("Something went wrong");
