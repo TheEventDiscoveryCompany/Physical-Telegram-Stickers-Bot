@@ -22,7 +22,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     var commands = helpers.getBotCommands(update.message);
 
-    // Start command, catch this first
+    // START CATCH COMMANDS
     if (commands.indexOf("/start") > -1) {
         helpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished\n\nDidn't like the stickers you sent? Type /start to start over\n\nIf you're having trouble using me, maybe I can /help").then(response => {
             res.end("they started");
@@ -45,6 +45,13 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             res.end("Something went wrong");
         });
     }
+    // Parse a sent sticker
+    else if (update.message.sticker != undefined) {
+        console.log("sticker: ", update.message.sticker);
+        stickerUrl = "https://api.telegram.org/file/bot" + process.env.TELEGRAM_BOT_TOKEN + "/" + update.message.sticker.file_id;
+        console.log("sticker url ", stickerUrl);
+    }
+    // END CATCH COMMANDS
     else {
         helpers.sendMessage(update.message.chat.id, "🅱️ig 🅱️oi").then(response => {
             res.end("general");
@@ -53,11 +60,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         });
     }
 
-
-    console.log(commands);
-
-    console.log(update);
-    console.log(update.message.entities);
+    console.log(update.message);
 });
 
 
