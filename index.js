@@ -21,6 +21,8 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         return res.end();
     }
 
+    console.log(update);
+
     axios.post(telegramApiUrl + 'sendMessage', {
         chat_id: update.message.chat.id,
         text: '🅱️ello 🅱️orld'
