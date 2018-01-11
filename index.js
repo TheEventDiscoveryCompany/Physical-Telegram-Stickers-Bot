@@ -26,14 +26,42 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     // START CATCH COMMANDS
     if (commands.indexOf("/start") > -1) {
-        // Start a pwinty order
-        
+        var message = "";
 
-        tgHelpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help").then(response => {
-            res.end("they started");
-        }).catch(err => {
-            res.end("Something went wrong");
-        });
+        var pwintyOrder = pwintyHelpers.createOrder()
+            .then(response => {
+                console.log(response.data);
+                message = "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help";
+
+                res.end("they order");
+            })
+            .catch(err => {
+                console.log("Error: ", err);
+                message = "I'm having problems getting started, try again in a little bit";
+                res.end();
+            });
+
+        console.log(message);
+/*
+        // Start a pwinty order
+        var pwintyOrder = pwintyHelpers.createOrder()
+            .then(response => {
+                console.log(response.data);
+                message = "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help";
+            })
+            .catch(err => {
+                console.log("Error: ", err);
+                message = "I'm having problems getting started, try again in a little bit";
+            })
+            .finally(() => {
+                tgHelpers.sendMessage(update.message.chat.id, message)
+                    .then(response => {
+                        res.end("they started");
+                    })
+                    .catch(err => {
+                        res.end("Something went wrong");
+                    });
+            });*/
     }
     else if (commands.indexOf("/done") > -1) {
         tgHelpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link.\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
@@ -55,8 +83,21 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         console.log("sticker: ", update.message.sticker);
         tgHelpers.getFile(update.message.sticker.file_id).then(response => {
             stickerUrl = tgHelpers.fileUrlPrefix + response.data.result.file_path;
-            console.log(stickerUrl);
-            res.end("they stickered");
+
+            pwintyHelpers.sendPwintyRequest("Orders/681697/Photos/", {
+                "type": "webp",
+                "url": stickerUrl,
+                "copies": 1,
+                "sizing": "ShrinkToFit"
+            })
+                .then(response => {
+                    console.log(response.data);
+                    res.end("sticker uploaded to pwinty");
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.end("Something went wrong");
+                });
         }).catch(err => {
             console.log("Couldn't get sticker");
             res.end("Something went wrong");
