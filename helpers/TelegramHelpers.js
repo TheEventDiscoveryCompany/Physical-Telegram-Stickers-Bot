@@ -2,6 +2,7 @@ var axios = require('axios');
 
 module.exports = {
     botUrlPrefix: "https://api.telegram.org/bot" + process.env.TELEGRAM_BOT_TOKEN + "/",
+    fileUrlPrefix: "https://api.telegram.org/file/bot" + process.env.TELEGRAM_BOT_TOKEN + "/",
 
     getBotCommands: function(message) {
         var commands = [];
@@ -20,18 +21,16 @@ module.exports = {
         return commands;
     },
 
+    getFile: function(fileId) {
+        return module.exports.sendTelegramRequest('getFile', {
+            file_id: fileId
+        });
+    },
+
     sendMessage: function(chatId, message) {
-        return new Promise((resolve, reject) => {
-            module.exports.sendTelegramRequest('sendMessage', {
-                chat_id: chatId,
-                text: message
-            }).then(response => {
-                console.log("Message sent");
-                resolve(response);
-            }).catch(err => {
-                console.log("Message not sent");
-                reject(err);
-            });
+        return module.exports.sendTelegramRequest('sendMessage', {
+            chat_id: chatId,
+            text: message
         });
     },
 
@@ -40,7 +39,7 @@ module.exports = {
 
         return new Promise((resolve, reject) => {
             axios.post(url, requestObj).then(response => {
-                console.log('Request sent');
+                console.log('Telegram Request sent');
                 resolve(response);
             }).catch(err => {
                 console.log('Error :', err);
