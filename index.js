@@ -10,7 +10,7 @@ var express = require('express'),
     aws = require('aws-sdk'),
     s3Stream = require('s3-upload-stream')(new aws.S3()),
     streamifier = require('streamifier'),
-    zlib = require('zlib'),
+    //zlib = require('zlib'),
     uuidv4 = require('uuid/v4'),
     webp = require('webp-converter'),
     tgHelpers = require('./helpers/TelegramHelpers'),
@@ -109,7 +109,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log("Sticker path: ", response.data.result.file_path);
                 var stickerUrl = tgHelpers.fileUrlPrefix + response.data.result.file_path;
                 return axios.get(stickerUrl, {
-                    responseType: "stream"
+                    responseType: "arraybuffer"
                 });
                 //return stickerUrl;
             })
@@ -117,26 +117,71 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log("converting");
                 // Convert webp sticker to png
                 return new Promise((resolve, reject) => {
-                    var file = fs.createWriteStream(__dirname + '/tmp/' + stickerUUID + '.webp', { mode: 0o755 });
-                    response.data.pipe(file);
+                    //var file = fs.createWriteStream(__dirname + '/tmp/' + stickerUUID + '.webp', { mode: 0o755 });
+                    //response.data.pipe(file);
 
                     var dwebp = require(__dirname + '/node_modules/webp-converter/dwebp.js');
 
                     // Take data from stdin, send to stdout
                     // Keep everything in memory
-                    //var dwebpArgs = "-o - -- -";
-                    /*var dwebpArgs = __dirname + '/tmp/sticker.webp -o ' + __dirname + '/tmp/sticker.png';
+                    var dwebpArgs = "-o - -- -";
+                    //var dwebpArgs = __dirname + '/tmp/sticker.webp -o ' + __dirname + '/tmp/sticker.png';
                     //var command = dwebp() + ' ' + __dirname + '/tmp/sticker.webp -o ' + __dirname + '/tmp/sticker.png';
-                    var stickerPng = child_process.execFileSync(dwebp(), dwebpArgs.split(/\s+/), {
-                        "stdio": "pipe",
-                        "encoding": "utf8"
-                    });*/
+                    var stickerPng = child_process.spawnSync(dwebp(), dwebpArgs.split(/\s+/), {
+                        "input": response.data,
+                        "stdio": "pipe"
+                    });
 
-                    webp.dwebp("tmp/" + stickerUUID + ".webp", "tmp/" + stickerUUID + ".png", "-o", function(status) {
-                        console.log(status);
+                    /*var file = fs.createWriteStream(__dirname + '/tmp/sticker.png', { mode: 0o755 });
+                    file.write(stickerPng.stdout);
+                    file.end();*/
+
+                    //fs.writeFileSync(__dirname + '/tmp/sticker.png', stickerPng.stdout, { mode: 0o755 });
+
+                    //console.log(stickerPng.stdout);
+
+                    // Upload file to s3
+                    var fileKey = stickerUUID + ".png";
+                    var compress = zlib.createGzip();
+                    var upload = s3Stream.upload({
+                        "Bucket": "physical-telegram-stickers",
+                        "Key": fileKey,
+                        "ACL": "public-read",
+                        "ContentType": "image/png"
+                    });
+
+                    // Handle and catch errors
+                    upload.on('error', function (error) {
+                        console.log("Error uploading to s3: ", error);
+                        reject(error);
+                    });
+
+                    // Progress bar, kinda
+                    upload.on('part', function (details) {
+                        console.log(details);
+                    });
+
+                    // details contains URL of file
+                    upload.on('uploaded', function (details) {
+                        console.log(details);
+
+                        // delete png sticker
+                        /*fs.unlink("tmp/sticker.png", function(err) {
+                            console.log(err);
+                        });*/
+
+                        resolve(details);
+                    });
+
+                    // Pipe sticker png to s3
+                    streamifier.createReadStream(stickerPng.stdout).pipe(upload);
+
+                    //webp.dwebp("tmp/" + stickerUUID + ".webp", "tmp/" + stickerUUID + ".png", "-o", function(status) {
+                        //console.log(status);
 
                         //console.log(stickerPng.stdout.toString('utf8'));
 
+                        /*
                         if (status.indexOf("101") > -1) {
                             reject(status);
                         }
@@ -172,48 +217,9 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                                     });
                                     resolve(response);
                                 });
-                            });
-
-
-/*
-                            var fileData = fs.readFileSync("tmp/sticker.png");
-
-                            // Upload file to s3
-                            var compress = zlib.createGzip();
-                            var upload = s3Stream.upload({
-                                "Bucket": "physical-telegram-stickers",
-                                "Key": fileKey,
-                                "ACL": "public-read"
-                            });
-
-                            // Handle and catch errors
-                            upload.on('error', function (error) {
-                                console.log("Error uploading to s3: ", error);
-                                reject(error);
-                            });
-
-                            // Progress bar, kinda
-                            upload.on('part', function (details) {
-                                console.log(details);
-                            });
-
-                            // details contains URL of file
-                            upload.on('uploaded', function (details) {
-                                console.log(details);
-
-                                // delete png sticker
-                                fs.unlink("tmp/sticker.png", function(err) {
-                                    console.log(err);
-                                });
-
-                                resolve(details);
-                            });
-
-                            // Pipe sticker png to s3
-                            streamifier.createReadStream(fileData).pipe(compress).pipe(upload);
-                            */
-                        }
-                    });
+                            });*/                            
+                        //}
+                    //});
                 });
             })
             .then(details => {
