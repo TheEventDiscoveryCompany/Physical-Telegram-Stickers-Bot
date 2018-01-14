@@ -10,6 +10,7 @@ var express = require('express'),
     s3 = require('aws-sdk/clients/s3'),
     s3Stream = require('s3-upload-stream')(new s3()),
     stream = require('stream'),
+    zlib     = require('zlib'),
     tgHelpers = require('./helpers/TelegramHelpers'),
     pwintyHelpers = require('./helpers/PwintyHelpers');
 
@@ -126,8 +127,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                     }
                     else {
                         // Turn stdout buffer from conversion into stream for s3 upload
-                        var stickerStream = new stream.PassThrough();
-                        stickerStream.end(stickerPng.stdout);
+                        var stickerStream = new stream.Readable(stickerPng.stdout);
                         resolve(stickerStream);
                     }
                 });
