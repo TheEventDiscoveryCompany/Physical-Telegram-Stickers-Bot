@@ -3,12 +3,12 @@ require('dotenv').config();
 var express = require('express'),
     app = express(),
     bodyParser = require('body-parser'),
+    child_process = require('child_process'),
     mongoose = require('mongoose'),
     fs = require('fs'),
     axios = require('axios'),
     s3 = require('aws-sdk/clients/s3'),
     s3Stream = require('s3-upload-stream')(new s3()),
-    //helpers = require('./helpers/Helpers');
     tgHelpers = require('./helpers/TelegramHelpers'),
     pwintyHelpers = require('./helpers/PwintyHelpers');
 
@@ -31,22 +31,22 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     // START CATCH COMMANDS
     if (commands.indexOf("/start") > -1) {
-        var message = "";
-
         var pwintyOrder = pwintyHelpers.createOrder()
             .then(response => {
                 console.log(response.data);
-                message = "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help";
+                tgHelpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help").then(response => {
+                    res.end("they started");
+                })
+                .catch(err => {
+                    res.end("Something went wrong");
+                });
+
                 res.end("they order");
             })
             .catch(err => {
                 console.log("Error: ", err);
-                message = "I'm having problems getting started, try again in a little bit";
-                res.end();
-            })
-            .finally(() => {
-                tgHelpers.sendMessage(update.message.chat.id, message).then(response => {
-                    res.end("they started");
+                tgHelpers.sendMessage(update.message.chat.id, "I'm having problems getting started, try again in a little bit").then(response => {
+                    res.end("they informed of error");
                 })
                 .catch(err => {
                     res.end("Something went wrong");
