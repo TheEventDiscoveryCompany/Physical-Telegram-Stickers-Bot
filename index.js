@@ -131,7 +131,6 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             .then(stickerPng => {
                 // Upload sticker png to s3
                 console.log("Passed conversion");
-                console.log(stickerPng);
 
                 return new Promise((resolve, reject) => {
                     // Configure upload
@@ -154,7 +153,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                     });
 
                     // Pipe sticker png to s3
-                    stickerPng.pipe(upload);
+                    stickerPng.stdout.pipe(upload);
                 });
             })
             .then(details => {
