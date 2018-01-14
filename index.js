@@ -7,10 +7,12 @@ var express = require('express'),
     mongoose = require('mongoose'),
     fs = require('fs'),
     axios = require('axios'),
-    s3 = require('aws-sdk/clients/s3'),
-    s3Stream = require('s3-upload-stream')(new s3()),
-    stream = require('stream'),
-    zlib     = require('zlib'),
+    aws = require('aws-sdk'),
+    s3Stream = require('s3-upload-stream')(new aws.S3()),
+    streamifier = require('streamifier'),
+    zlib = require('zlib'),
+    uuidv4 = require('uuid/v4'),
+    webp = require('webp-converter'),
     tgHelpers = require('./helpers/TelegramHelpers'),
     pwintyHelpers = require('./helpers/PwintyHelpers');
 
@@ -97,74 +99,134 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
     else if (update.message.sticker != undefined) {
         console.log("sticker: ", update.message.sticker);
 
-        var stickerPath = "";
+        var stickerUUID = uuidv4();
 
         // Get file path of sticker from Telegram
         tgHelpers.getFile(update.message.sticker.file_id)
             .then(response => {
                 console.log("getting sticker");
                 // Get sticker from Telegram
-                var stickerPath = response.data.result.file_path;
-                console.log("Sticker path: ", stickerPath);
-                var stickerUrl = tgHelpers.fileUrlPrefix + stickerPath;
-                return axios.get(stickerUrl);
+                console.log("Sticker path: ", response.data.result.file_path);
+                var stickerUrl = tgHelpers.fileUrlPrefix + response.data.result.file_path;
+                return axios.get(stickerUrl, {
+                    responseType: "stream"
+                });
+                //return stickerUrl;
             })
             .then(response => {
                 console.log("converting");
                 // Convert webp sticker to png
                 return new Promise((resolve, reject) => {
+                    var file = fs.createWriteStream(__dirname + '/tmp/' + stickerUUID + '.webp', { mode: 0o755 });
+                    response.data.pipe(file);
+
                     var dwebp = require(__dirname + '/node_modules/webp-converter/dwebp.js');
 
                     // Take data from stdin, send to stdout
                     // Keep everything in memory
-                    var dwebpArgs = "-o - -- -";
-                    var stickerPng = child_process.spawnSync(dwebp(), dwebpArgs.split(/\s+/), {
-                        "input": response.data
+                    //var dwebpArgs = "-o - -- -";
+                    /*var dwebpArgs = __dirname + '/tmp/sticker.webp -o ' + __dirname + '/tmp/sticker.png';
+                    //var command = dwebp() + ' ' + __dirname + '/tmp/sticker.webp -o ' + __dirname + '/tmp/sticker.png';
+                    var stickerPng = child_process.execFileSync(dwebp(), dwebpArgs.split(/\s+/), {
+                        "stdio": "pipe",
+                        "encoding": "utf8"
+                    });*/
+
+                    webp.dwebp("tmp/" + stickerUUID + ".webp", "tmp/" + stickerUUID + ".png", "-o", function(status) {
+                        console.log(status);
+
+                        //console.log(stickerPng.stdout.toString('utf8'));
+
+                        if (status.indexOf("101") > -1) {
+                            reject(status);
+                        }
+                        else {
+                            // delete webp sticker
+                            fs.unlink("tmp/" + stickerUUID + ".webp", function(err) {
+                                console.log(err);
+                            });
+
+                            fs.readFile("tmp/" + stickerUUID + ".png", function (err, data) {
+                                if (err) {
+                                    reject(err);
+                                }
+
+                                // Prep data for uploading
+                                var base64data = new Buffer.from(data, 'binary');
+                                var fileKey = stickerUUID + ".png";
+                                var s3 = new aws.S3();
+                                
+                                // Upload file
+                                s3.upload({
+                                    Bucket: 'physical-telegram-stickers',
+                                    Key: fileKey,
+                                    Body: base64data,
+                                    ACL: 'public-read',
+                                    ContentType: 'image/png'
+                                }, function (err, response) {
+                                    if (err) {
+                                        reject(err);
+                                    }
+                                    fs.unlink("tmp/" + stickerUUID + ".png", function(err) {
+                                        console.log(err);
+                                    });
+                                    resolve(response);
+                                });
+                            });
+
+
+/*
+                            var fileData = fs.readFileSync("tmp/sticker.png");
+
+                            // Upload file to s3
+                            var compress = zlib.createGzip();
+                            var upload = s3Stream.upload({
+                                "Bucket": "physical-telegram-stickers",
+                                "Key": fileKey,
+                                "ACL": "public-read"
+                            });
+
+                            // Handle and catch errors
+                            upload.on('error', function (error) {
+                                console.log("Error uploading to s3: ", error);
+                                reject(error);
+                            });
+
+                            // Progress bar, kinda
+                            upload.on('part', function (details) {
+                                console.log(details);
+                            });
+
+                            // details contains URL of file
+                            upload.on('uploaded', function (details) {
+                                console.log(details);
+
+                                // delete png sticker
+                                fs.unlink("tmp/sticker.png", function(err) {
+                                    console.log(err);
+                                });
+
+                                resolve(details);
+                            });
+
+                            // Pipe sticker png to s3
+                            streamifier.createReadStream(fileData).pipe(compress).pipe(upload);
+                            */
+                        }
                     });
-
-                    if (stickerPng == null) {
-                        reject("Error converting webp to png");
-                    }
-                    else {
-                        // Turn stdout buffer from conversion into stream for s3 upload
-                        var stickerStream = new stream.Readable(stickerPng.stdout);
-                        resolve(stickerStream);
-                    }
-                });
-
-            })
-            .then(stickerStream => {
-                // Upload sticker png to s3
-                console.log("Passed conversion");
-
-                return new Promise((resolve, reject) => {
-                    // Configure upload
-                    var fileKey = stickerPath + ".png";
-                    var upload = s3Stream.upload({
-                        "Bucket": "physical-telegram-stickers",
-                        "Key": fileKey
-                    });
-
-                    // Handle and catch errors
-                    upload.on('error', function (error) {
-                        console.log("Error uploading to s3: ", error);
-                        reject(error);
-                    });
-
-                    // details contains URL of file
-                    upload.on('uploaded', function (details) {
-                        console.log(details);
-                        resolve(details);
-                    });
-
-                    // Pipe sticker png to s3
-                    stickerStream.pipe(upload);
                 });
             })
             .then(details => {
                 // Store the URL of the file to the DB
                 console.log(details);
-                res.end("they stickered");
+
+                tgHelpers.sendMessage(update.message.chat.id, details.Location).then(response => {
+                    res.end("they stickered");
+                }).catch(err => {
+                    res.end("Something went wrong");
+                });
+
+                //res.end("they stickered");
             })
             .catch(err => {
                 console.log("Error: ", err);
