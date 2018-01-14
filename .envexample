@@ -8,3 +8,6 @@ DB_DATABASE=
 PWINTY_ENV=sandbox # sandbox or live (default is sandbox)
 PWINTY_MERCHANT_ID=
 PWINTY_API_KEY=
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=

@@ -1,11 +1,16 @@
 require('dotenv').config();
 
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
-var tgHelpers = require('./helpers/TelegramHelpers');
-var pwintyHelpers = require('./helpers/PwintyHelpers');
+var express = require('express'),
+    app = express(),
+    bodyParser = require('body-parser'),
+    mongoose = require('mongoose'),
+    fs = require('fs'),
+    axios = require('axios'),
+    s3 = require('aws-sdk/clients/s3'),
+    s3Stream = require('s3-upload-stream')(new s3()),
+    //helpers = require('./helpers/Helpers');
+    tgHelpers = require('./helpers/TelegramHelpers'),
+    pwintyHelpers = require('./helpers/PwintyHelpers');
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
@@ -32,16 +37,21 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             .then(response => {
                 console.log(response.data);
                 message = "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help";
-
                 res.end("they order");
             })
             .catch(err => {
                 console.log("Error: ", err);
                 message = "I'm having problems getting started, try again in a little bit";
                 res.end();
+            })
+            .finally(() => {
+                tgHelpers.sendMessage(update.message.chat.id, message).then(response => {
+                    res.end("they started");
+                })
+                .catch(err => {
+                    res.end("Something went wrong");
+                });
             });
-
-        console.log(message);
 /*
         // Start a pwinty order
         var pwintyOrder = pwintyHelpers.createOrder()
@@ -74,36 +84,88 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
     else if (commands.indexOf("/help") > -1) {
         tgHelpers.sendMessage(update.message.chat.id, "At any time you can type /start to begin or start over.\n\nWhen you are finished sending me stickers, type /done and I'll send you a link to order them.\n\nType /help and I'll send you this exact message again.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com.").then(response => {
             res.end("they helped");
-        }).catch(err => {
-            res.end("Something went wrong");
-        });
-    }
-    // Parse a sent sticker
-    else if (update.message.sticker != undefined) {
-        console.log("sticker: ", update.message.sticker);
-        tgHelpers.getFile(update.message.sticker.file_id).then(response => {
-            stickerUrl = tgHelpers.fileUrlPrefix + response.data.result.file_path;
-
-            pwintyHelpers.sendPwintyRequest("Orders/681697/Photos/", {
-                "type": "webp",
-                "url": stickerUrl,
-                "copies": 1,
-                "sizing": "ShrinkToFit"
-            })
-                .then(response => {
-                    console.log(response.data);
-                    res.end("sticker uploaded to pwinty");
-                })
-                .catch(err => {
-                    console.log(err);
-                    res.end("Something went wrong");
-                });
-        }).catch(err => {
-            console.log("Couldn't get sticker");
+        })
+        .catch(err => {
             res.end("Something went wrong");
         });
     }
     // END CATCH COMMANDS
+
+    // Parse a sent sticker
+    else if (update.message.sticker != undefined) {
+        console.log("sticker: ", update.message.sticker);
+
+        var stickerPath = "";
+
+        // Get file path of sticker from Telegram
+        tgHelpers.getFile(update.message.sticker.file_id)
+            .then(response => {
+                console.log("getting sticker");
+                // Get sticker from Telegram
+                var stickerPath = response.data.result.file_path;
+                var stickerUrl = tgHelpers.fileUrlPrefix + stickerPath;
+                return axios.get(stickerUrl);
+            })
+            .then(response => {
+                console.log("converting");
+                // Convert webp sticker to png
+                return new Promise((resolve, reject) => {
+                    var dwebp = require(__dirname + '/node_modules/webp-converter/dwebp.js');
+
+                    // Take data from stdin, send to stdout
+                    // Keep everything in memory
+                    var dwebpArgs = "-o - -- -";
+                    var stickerPng = child_process.spawnSync(dwebp(), dwebpArgs.split(/\s+/), {
+                        "input": response.data
+                    });
+
+                    if (stickerPng == null) {
+                        reject("Error converting webp to png");
+                    }
+                    else {
+                        resolve(stickerPng);
+                    }
+                });
+
+            })
+            .then(stickerPng => {
+                // Upload sticker png to s3
+                console.log("Passed conversion");
+                console.log(stickerPng);
+
+                return new Promise((resolve, reject) => {
+                    // Configure upload
+                    var fileKey = stickerPath + ".png";
+                    var upload = s3Stream.upload({
+                        "Bucket": "physical-telegram-stickers",
+                        "Key": fileKey
+                    });
+
+                    // Handle and catch errors
+                    upload.on('error', function (error) {
+                        console.log("Error uploading to s3: ", error);
+                        reject(error);
+                    });
+
+                    // details contains URL of file
+                    upload.on('uploaded', function (details) {
+                        console.log(details);
+                        resolve(details);
+                    });
+
+                    // Pipe sticker png to s3
+                    stickerPng.pipe(upload);
+                });
+            })
+            .then(details => {
+                // Store the URL of the file to the DB
+                console.log(details);
+            })
+            .catch(err => {
+                console.log("Error: ", err);
+                res.end("Something went wrong");
+            });
+    }
     else {
         tgHelpers.sendMessage(update.message.chat.id, "🅱️ig 🅱️oi").then(response => {
             res.end("general");
@@ -111,8 +173,6 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             res.end("Something went wrong");
         });
     }
-
-    console.log(update.message);
 });
 
 
