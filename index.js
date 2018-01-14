@@ -9,6 +9,7 @@ var express = require('express'),
     axios = require('axios'),
     s3 = require('aws-sdk/clients/s3'),
     s3Stream = require('s3-upload-stream')(new s3()),
+    stream = require('stream'),
     tgHelpers = require('./helpers/TelegramHelpers'),
     pwintyHelpers = require('./helpers/PwintyHelpers');
 
@@ -103,6 +104,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log("getting sticker");
                 // Get sticker from Telegram
                 var stickerPath = response.data.result.file_path;
+                console.log("Sticker path: ", stickerPath);
                 var stickerUrl = tgHelpers.fileUrlPrefix + stickerPath;
                 return axios.get(stickerUrl);
             })
@@ -123,12 +125,15 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                         reject("Error converting webp to png");
                     }
                     else {
-                        resolve(stickerPng);
+                        // Turn stdout buffer from conversion into stream for s3 upload
+                        var stickerStream = new stream.PassThrough();
+                        stickerStream.end(stickerPng.stdout);
+                        resolve(stickerStream);
                     }
                 });
 
             })
-            .then(stickerPng => {
+            .then(stickerStream => {
                 // Upload sticker png to s3
                 console.log("Passed conversion");
 
@@ -153,7 +158,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                     });
 
                     // Pipe sticker png to s3
-                    stickerPng.stdout.pipe(upload);
+                    stickerStream.pipe(upload);
                 });
             })
             .then(details => {
