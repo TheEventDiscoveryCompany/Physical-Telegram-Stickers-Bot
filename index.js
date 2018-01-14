@@ -142,7 +142,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
                     // Upload file to s3
                     var fileKey = stickerUUID + ".png";
-                    var compress = zlib.createGzip();
+                    //var compress = zlib.createGzip();
                     var upload = s3Stream.upload({
                         "Bucket": "physical-telegram-stickers",
                         "Key": fileKey,
