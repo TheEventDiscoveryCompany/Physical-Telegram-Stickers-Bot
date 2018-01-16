@@ -179,10 +179,47 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
     else if (update.message.sticker != undefined) {
         console.log("sticker: ", update.message.sticker);
 
+        var stickerObjectId = mongoose.Types.ObjectId();
         var stickerUUID = uuidv4();
 
-        // Get file path of sticker from Telegram
-        tgHelpers.getFile(update.message.sticker.file_id)
+        mongoose.connect(mongodbUri, {useMongoClient: true})
+            .then(() => {
+                console.log("connected");
+
+                // TODO: Try to combine the next 2 queries into one
+
+                // Get chat with active sticker group
+                return Chat.findOne({ chatId: update.message.chat.id })
+                    .populate({
+                        "path": "stickerGroups",
+                        "match": { isActive: true },
+                        "options": { limit: 1 }
+                    })
+                    .exec();
+            })
+            .then(chat => {
+                console.log("got chat");
+                console.log(chat);
+
+                // Update sticker group references
+                chat.stickerGroups[0].stickers.push(stickerObjectId);
+                return chat.stickerGroups[0].save();
+            })
+            .then(chat => {
+                console.log("Updated sticker group with sticker reference");
+                console.log(chat);
+
+                // Create new sticker
+                var sticker = new Sticker({ _id: stickerObjectId });
+                return sticker.save();
+            })
+            .then(sticker => {
+                console.log("Added new sticker");
+                console.log(sticker);
+
+                // Get file path of sticker from Telegram
+                return tgHelpers.getFile(update.message.sticker.file_id);
+            })
             .then(response => {
                 console.log("getting sticker");
                 // Get sticker from Telegram
@@ -303,16 +340,19 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 });
             })
             .then(details => {
-                // Store the URL of the file to the DB
                 console.log(details);
 
-                tgHelpers.sendMessage(update.message.chat.id, details.Location).then(response => {
-                    res.end("they stickered");
-                }).catch(err => {
-                    res.end("Something went wrong");
-                });
+                // Store the URL of the file to the DB
+                return Sticker.findOneAndUpdate({ _id: stickerObjectId }, { url: details.Location }, { new: true });
+            })
+            .then(sticker => {
+                console.log("Updated sticker with URL");
+                console.log(sticker);
 
-                //res.end("they stickered");
+                return tgHelpers.sendMessage(update.message.chat.id, sticker.url);
+            })
+            .then(response => {
+                res.end("they stickered");
             })
             .catch(err => {
                 console.log("Error: ", err);
