@@ -55,8 +55,8 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
     if (commands.indexOf("/start") > -1) {
         console.log(update);
 
-        mongoose.connect(mongodbUri)
-            .then(() => {
+        mongoose.createConnection(mongodbUri)
+            .then(db => {
                 console.log("connected");
                 return Chat.update({ chatId: update.message.chat.id }, {}, { upsert: true });
             })
