@@ -21,7 +21,8 @@ var tgHelpers = require('./helpers/TelegramHelpers'),
 //Mongoose stuff
 mongoose.Promise = global.Promise;
 var Chat = require('./models/Chat'),
-    StickerGroup = require('./models/StickerGroup');
+    StickerGroup = require('./models/StickerGroup'),
+    Sticker = require('./models/Sticker');
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
@@ -59,10 +60,66 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         mongoose.connect(mongodbUri, {useMongoClient: true})
             .then(() => {
                 console.log("connected");
-                return Chat.update({ chatId: update.message.chat.id }, {}, { upsert: true });
+
+                // Upsert chat with Telegram chat id
+                return Chat.findOneAndUpdate({ chatId: update.message.chat.id }, {}, { upsert: true, new: true });
+                    /*.populate({
+                        "path": "stickerGroups",
+                        "match": { isActive: true }
+                    })
+                    .exec();*/
             })
-            .then(() => {
+            .then(chat => {
                 console.log("updated chat");
+                console.log(chat);
+
+                // Upsert active sticker group with chat reference
+                // There should only ever be one or zero active sticker group at a time
+                return StickerGroup.findOneAndUpdate({
+                    chat: chat._id,
+                    isActive: true
+                }, {}, { upsert: true, new: true })
+                    .populate("chat")
+                    .exec();
+            })
+            .then(stickerGroup => {
+                console.log("updated sticker group");
+                console.log(stickerGroup);
+
+                // If the chat does not already reference this sticker group, reference it
+                if (stickerGroup.chat.stickerGroups.indexOf(stickerGroup._id) === -1) {
+                    stickerGroup.chat.stickerGroups.push(stickerGroup._id);
+                }
+                return stickerGroup.chat.save();
+            })
+            .then(stickerGroup => {
+                console.log("updated chat with sticker group reference");
+                console.log(stickerGroup);
+
+                // Check if there are stickers before removing
+                if (stickerGroup.stickers !== undefined) {
+                    stickerGroup.stickers.pull();
+                    return stickerGroup.stickers.save();
+                }
+                else {
+                    return stickerGroup;
+                }
+            })
+            .then(stickerGroup => {
+                console.log("Removed stickers references from sticker group");
+                console.log(stickerGroup);
+
+                // Check if there are stickers before removing
+                if (stickerGroup.stickers !== undefined) {
+                    return Sticker.remove({ stickerGroup: stickerGroup._id }).exec();
+                }
+                else {
+                    return {};
+                }
+            })
+            .then(result => {
+                console.log("Removed stickers from sticker group");
+
                 return tgHelpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help");
             })
             .then(response => {
@@ -70,6 +127,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             })
             .catch(err => {
                 console.log("Error starting: ", err);
+
                 tgHelpers.sendMessage(update.message.chat.id, "I'm having problems getting started, try again in a little bit").then(response => {
                     res.end("they informed of error");
                 }).catch(err => {
@@ -98,6 +156,8 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             });*/
     }
     else if (commands.indexOf("/done") > -1) {
+        // TODO: Mark active sticker group as inactive
+
         tgHelpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link.\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
             res.end("they done");
         }).catch(err => {
