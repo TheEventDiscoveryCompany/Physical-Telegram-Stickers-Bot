@@ -202,12 +202,12 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 chat.stickerGroups[0].stickers.push(stickerObjectId);
                 return chat.stickerGroups[0].save();
             })
-            .then(chat => {
+            .then(stickerGroup => {
                 console.log("Updated sticker group with sticker reference");
-                console.log(chat);
+                console.log(stickerGroup);
 
                 // Create new sticker
-                var sticker = new Sticker({ _id: stickerObjectId, stickerGroup: chat.stickerGroups[0]._id });
+                var sticker = new Sticker({ _id: stickerObjectId, stickerGroup: stickerGroup._id });
                 return sticker.save();
             })
             .then(sticker => {
