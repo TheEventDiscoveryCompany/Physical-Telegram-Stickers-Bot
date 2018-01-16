@@ -18,7 +18,8 @@ var express = require('express'),
 var tgHelpers = require('./helpers/TelegramHelpers'),
     pwintyHelpers = require('./helpers/PwintyHelpers');
 
-//Mongoose models
+//Mongoose stuff
+mongoose.Promise = global.Promise;
 var Chat = require('./models/Chat'),
     StickerGroup = require('./models/StickerGroup');
 
@@ -30,14 +31,14 @@ app.use(bodyParser.urlencoded({
 var port = process.env.PORT || 3000;
 
 if (process.env.MONGODB_URI === undefined) {
-    var mongodbUri = "mongodb://" +
-        process.env.MONGODB_USER + ":" +
-        process.env.MONGODB_PASSWORD + "@" +
-        process.env.MONGODB_HOST + ":" +
-        process.env.MONGODB_PORT + "/" +
-        process.env.MONGODB_DATABASE;
+    // Server with no authentication
+    var mongodbUri = "mongodb://";
+    mongodbUri += process.env.MONGODB_HOST + ":" +
+    process.env.MONGODB_PORT + "/" +
+    process.env.MONGODB_DATABASE;
 }
 else {
+    // URI set on production/staging
     var mongodbUri = process.env.MONGODB_URI;
 }
 
@@ -49,14 +50,14 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         return res.end();
     }
 
+    // Get Telegram commands
     var commands = tgHelpers.getBotCommands(update.message);
 
     // START CATCH COMMANDS
     if (commands.indexOf("/start") > -1) {
         console.log(update);
-
-        mongoose.createConnection(mongodbUri)
-            .then(db => {
+        mongoose.connect(mongodbUri, {useMongoClient: true})
+            .then(() => {
                 console.log("connected");
                 return Chat.update({ chatId: update.message.chat.id }, {}, { upsert: true });
             })
