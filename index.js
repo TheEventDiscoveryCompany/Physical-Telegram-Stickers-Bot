@@ -109,13 +109,8 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log("Removed stickers references from sticker group");
                 console.log(stickerGroup);
 
-                // Check if there are stickers before removing
-                if (stickerGroup.stickers !== undefined) {
-                    return Sticker.remove({ stickerGroup: stickerGroup._id }).exec();
-                }
-                else {
-                    return {};
-                }
+                // Remove all stickers in the sticker group
+                return Sticker.remove({ stickerGroup: stickerGroup._id }).exec();
             })
             .then(result => {
                 console.log("Removed stickers from sticker group");
@@ -210,7 +205,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log(chat);
 
                 // Create new sticker
-                var sticker = new Sticker({ _id: stickerObjectId });
+                var sticker = new Sticker({ _id: stickerObjectId, stickerGroup: chat.stickerGroups[0]._id });
                 return sticker.save();
             })
             .then(sticker => {
