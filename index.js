@@ -109,8 +109,10 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log("Removed stickers references from sticker group");
                 console.log(stickerGroup);
 
+                // TODO: Why aren't these stickers being removed???
+
                 // Remove all stickers in the sticker group
-                return Sticker.remove({ stickerGroup: stickerGroup._id }).exec();
+                return Sticker.find({ stickerGroup: stickerGroup._id }).remove().exec();
             })
             .then(result => {
                 console.log("Removed stickers from sticker group");
