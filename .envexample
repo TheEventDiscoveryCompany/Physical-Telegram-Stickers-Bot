@@ -1,9 +1,11 @@
 PORT=3000
 TELEGRAM_BOT_TOKEN=
 
-DB_PORT=
-DB_HOST=
-DB_DATABASE=
+MONGODB_HOST=localhost
+MONGODB_PORT=27017
+MONGODB_DATABASE=physical_telegram_stickers
+MONGODB_USER=
+MONGODB_PASSWORD=
 
 PWINTY_ENV=sandbox # sandbox or live (default is sandbox)
 PWINTY_MERCHANT_ID=

@@ -12,9 +12,15 @@ var express = require('express'),
     streamifier = require('streamifier'),
     //zlib = require('zlib'),
     uuidv4 = require('uuid/v4'),
-    webp = require('webp-converter'),
-    tgHelpers = require('./helpers/TelegramHelpers'),
+    webp = require('webp-converter');
+
+// Helpers
+var tgHelpers = require('./helpers/TelegramHelpers'),
     pwintyHelpers = require('./helpers/PwintyHelpers');
+
+//Mongoose models
+var Chat = require('./models/Chat'),
+    StickerGroup = require('./models/StickerGroup');
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
@@ -22,6 +28,18 @@ app.use(bodyParser.urlencoded({
 })); // for parsing application/x-www-form-urlencoded
 
 var port = process.env.PORT || 3000;
+
+if (process.env.MONGODB_URI === undefined) {
+    var mongodbUri = "mongodb://" +
+        process.env.MONGODB_USER + ":" +
+        process.env.MONGODB_PASSWORD + "@" +
+        process.env.MONGODB_HOST + ":" +
+        process.env.MONGODB_PORT + "/" +
+        process.env.MONGODB_DATABASE;
+}
+else {
+    var mongodbUri = process.env.MONGODB_URI;
+}
 
 // Use a GUID for the URL to eliminate fake messages
 app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
@@ -35,24 +53,25 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     // START CATCH COMMANDS
     if (commands.indexOf("/start") > -1) {
-        var pwintyOrder = pwintyHelpers.createOrder()
-            .then(response => {
-                console.log(response.data);
-                tgHelpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help").then(response => {
-                    res.end("they started");
-                })
-                .catch(err => {
-                    res.end("Something went wrong");
-                });
+        console.log(update);
 
-                res.end("they order");
+        mongoose.connect(mongodbUri)
+            .then(() => {
+                console.log("connected");
+                return Chat.update({ chatId: update.message.chat.id }, {}, { upsert: true });
+            })
+            .then(() => {
+                console.log("updated chat");
+                return tgHelpers.sendMessage(update.message.chat.id, "Hey there! I'll take your favorite stickers and deliver them right to your doorstep.\n\nStart by sending me your stickers and type /done when you've finished.\n\nDidn't like the stickers you sent? Type /start to start over.\n\nIf you're having trouble using me, maybe I can /help");
+            })
+            .then(response => {
+                res.end("they started");
             })
             .catch(err => {
-                console.log("Error: ", err);
+                console.log("Error starting: ", err);
                 tgHelpers.sendMessage(update.message.chat.id, "I'm having problems getting started, try again in a little bit").then(response => {
                     res.end("they informed of error");
-                })
-                .catch(err => {
+                }).catch(err => {
                     res.end("Something went wrong");
                 });
             });
