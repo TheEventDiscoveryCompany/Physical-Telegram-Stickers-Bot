@@ -78,35 +78,10 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 return StickerGroup.findOneAndUpdate({
                     chat: chat._id,
                     isActive: true
-                }, {}, { upsert: true, new: true })
-                    .populate("chat")
-                    .exec();
+                }, {}, { upsert: true, new: true });
             })
             .then(stickerGroup => {
-                console.log("updated sticker group");
-                console.log(stickerGroup);
-
-                // If the chat does not already reference this sticker group, reference it
-                if (stickerGroup.chat.stickerGroups.indexOf(stickerGroup._id) === -1) {
-                    stickerGroup.chat.stickerGroups.push(stickerGroup._id);
-                }
-                return stickerGroup.chat.save();
-            })
-            .then(stickerGroup => {
-                console.log("updated chat with sticker group reference");
-                console.log(stickerGroup);
-
-                // Check if there are stickers before removing
-                if (stickerGroup.stickers !== undefined) {
-                    stickerGroup.stickers.pull();
-                    return stickerGroup.stickers.save();
-                }
-                else {
-                    return stickerGroup;
-                }
-            })
-            .then(stickerGroup => {
-                console.log("Removed stickers references from sticker group");
+                console.log("Updated stickerGroup");
                 console.log(stickerGroup);
 
                 // TODO: Why aren't these stickers being removed???
