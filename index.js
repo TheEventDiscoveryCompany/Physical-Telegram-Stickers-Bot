@@ -347,12 +347,12 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 // Store the URL of the file to the DB
                 return Sticker.findOneAndUpdate({ _id: stickerObjectId }, { url: details.Location }, { new: true });
             })
-            .then(sticker => {
+            /*.then(sticker => {
                 console.log("Updated sticker with URL");
                 console.log(sticker);
 
                 return tgHelpers.sendMessage(update.message.chat.id, sticker.url);
-            })
+            })*/
             .then(response => {
                 res.end("they stickered");
             })
