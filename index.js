@@ -157,32 +157,25 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
         mongoose.connect(mongodbUri, {useMongoClient: true})
             .then(() => {
                 console.log("connected");
-
-                // TODO: Try to combine the next 2 queries into one
-
-                // Get chat with active sticker group
+                
+                // Get active sticker group
                 return Chat.findOne({ chatId: update.message.chat.id })
                     .populate({
                         "path": "stickerGroups",
                         "match": { isActive: true },
                         "options": { limit: 1 }
-                    })
-                    .exec();
+                    }).exec();
+                /*return StickerGroup.findOne({
+                    chatId: update.message.chat.id,
+                    isActive: true
+                });*/
             })
             .then(chat => {
-                console.log("got chat");
+                console.log("got chat with active sticker group");
                 console.log(chat);
 
-                // Update sticker group references
-                chat.stickerGroups[0].stickers.push(stickerObjectId);
-                return chat.stickerGroups[0].save();
-            })
-            .then(stickerGroup => {
-                console.log("Updated sticker group with sticker reference");
-                console.log(stickerGroup);
-
                 // Create new sticker
-                var sticker = new Sticker({ _id: stickerObjectId, stickerGroup: stickerGroup._id });
+                var sticker = new Sticker({ _id: stickerObjectId, stickerGroup: chat.stickerGroups[0]._id });
                 return sticker.save();
             })
             .then(sticker => {
@@ -312,6 +305,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 });
             })
             .then(details => {
+                console.log("Converted and uploaded sticker");
                 console.log(details);
 
                 // Store the URL of the file to the DB

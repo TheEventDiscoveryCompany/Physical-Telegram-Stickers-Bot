@@ -11,6 +11,14 @@ var StickerGroupSchema = new mongoose.Schema({
     }]
 });
 
+StickerGroupSchema.post('save', function(doc) {
+    console.log("post save");
+    // Add ref for sticker group to referenced chat
+    doc.constructor.updateRefs("add", doc, function(err, chat) {
+        if (err) console.log(err);
+        console.log("refs added");
+    });
+});
 
 StickerGroupSchema.post('findOneAndUpdate', function(doc) {
     console.log("post findOneAndUpdate");
@@ -24,7 +32,7 @@ StickerGroupSchema.post('findOneAndUpdate', function(doc) {
 StickerGroupSchema.post('remove', function(doc) {
     console.log("post remove");
     // Remove ref for sticker group to referenced chat
-    this.model.updateRefs("remove", doc, function(err, chat) {
+    doc.constructor.updateRefs("remove", doc, function(err, chat) {
         if (err) console.log(err);
         console.log("refs removed");
     });
