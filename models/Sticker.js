@@ -2,7 +2,10 @@ var mongoose = require('mongoose');
 var StickerGroup = require('./StickerGroup');
 
 var StickerSchema = new mongoose.Schema({
-    stickerGroup: { type: mongoose.Schema.Types.ObjectId, ref: 'StickerGroup' },
+    stickerGroup: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'StickerGroup'
+    },
     url: String
 });
 

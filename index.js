@@ -128,11 +128,47 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             });*/
     }
     else if (commands.indexOf("/done") > -1) {
-        // TODO: Mark active sticker group as inactive
+        mongoose.connect(mongodbUri, {useMongoClient: true})
+        .then(() => {
+            console.log("connected");
 
-        tgHelpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: some link.\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com").then(response => {
+            // Get active sticker group
+            return Chat.findOne({ chatId: update.message.chat.id })
+                .populate({
+                    "path": "stickerGroups",
+                    "match": { isActive: true },
+                    "options": { limit: 1 }
+                }).exec();
+        })
+        .then(chat => {
+            console.log("got chat with active sticker group");
+            console.log(chat);
+
+            // Mark sticker group inactive
+            chat.stickerGroups[0].isActive = false;
+            return chat.stickerGroups[0].save();
+        })
+        .then(stickerGroup => {
+            console.log("de-activated active sticker group");
+            console.log(stickerGroup);
+
+            // Create new sticker group (upsert just in case)
+            return StickerGroup.findOneAndUpdate({
+                chat: stickerGroup.chat,
+                isActive: true
+            }, {}, { upsert: true, new: true });
+        })
+        .then(stickerGroup => {
+            console.log("Created new active sticker group");
+            console.log(stickerGroup);
+
+            var stickerGroupUrl = "https://buy.physicaltelegramstickers.com/g/" + stickerGroup.urlSlug;
+            return tgHelpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: " + stickerGroupUrl + "\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com");
+        })
+        .then(response => {
             res.end("they done");
         }).catch(err => {
+            console.log("Error: ", err);
             res.end("Something went wrong");
         });
 

@@ -1,8 +1,17 @@
 var mongoose = require('mongoose');
+var shortid = require('shortid');
 var Chat = require('./Chat');
 
 var StickerGroupSchema = new mongoose.Schema({
-    chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat' },
+    chat: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Chat'
+    },
+    urlSlug: {
+        type: String,
+        unique: true,
+        default: shortid.generate
+    },
     //chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', localField: '_id', foreignField: 'band' },
     isActive: { type: Boolean, default: true },
     stickers: [{

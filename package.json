@@ -25,6 +25,7 @@
     "express": "^4.16.2",
     "mongoose": "^4.13.9",
     "s3-upload-stream": "^1.0.7",
+    "shortid": "^2.2.8",
     "streamifier": "^0.1.1",
     "uuid": "^3.1.0",
     "webp-converter": "^2.1.6"
