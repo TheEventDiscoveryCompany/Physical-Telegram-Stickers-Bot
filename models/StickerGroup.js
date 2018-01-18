@@ -10,7 +10,7 @@ var StickerGroupSchema = new mongoose.Schema({
     urlSlug: {
         type: String,
         unique: true,
-        default: shortid.generate
+        default: function() { return shortid.generate(); }
     },
     //chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', localField: '_id', foreignField: 'band' },
     isActive: { type: Boolean, default: true },

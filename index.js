@@ -84,8 +84,6 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log("Updated stickerGroup");
                 console.log(stickerGroup);
 
-                // TODO: Why aren't these stickers being removed???
-
                 // Remove all stickers in the sticker group
                 return Sticker.find({ stickerGroup: stickerGroup._id }).remove().exec();
             })
@@ -163,7 +161,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             console.log(stickerGroup);
 
             var stickerGroupUrl = "https://buy.physicaltelegramstickers.com/g/" + stickerGroup.urlSlug;
-            return tgHelpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: " + stickerGroupUrl + "\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com");
+            return tgHelpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: " + stickerGroupUrl + "\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Send them to physicaltelegramstickers@gmail.com");
         })
         .then(response => {
             res.end("they done");
@@ -174,7 +172,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
 
     }
     else if (commands.indexOf("/help") > -1) {
-        tgHelpers.sendMessage(update.message.chat.id, "At any time you can type /start to begin or start over.\n\nWhen you are finished sending me stickers, type /done and I'll send you a link to order them.\n\nType /help and I'll send you this exact message again.\n\nThoughts? Ideas? Kind words? Email me at physicaltelegramstickers@gmail.com.").then(response => {
+        tgHelpers.sendMessage(update.message.chat.id, "At any time you can type /start to begin or start over.\n\nWhen you are finished sending me stickers, type /done and I'll send you a link to order them.\n\nType /help and I'll send you this exact message again.\n\nThoughts? Ideas? Kind words? Send them to physicaltelegramstickers@gmail.com.").then(response => {
             res.end("they helped");
         })
         .catch(err => {
