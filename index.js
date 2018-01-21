@@ -12,11 +12,15 @@ var express = require('express'),
     streamifier = require('streamifier'),
     //zlib = require('zlib'),
     uuidv4 = require('uuid/v4'),
+    shortid = require('shortid'),
     webp = require('webp-converter');
 
 // Helpers
 var tgHelpers = require('./helpers/TelegramHelpers'),
     pwintyHelpers = require('./helpers/PwintyHelpers');
+
+// Classes
+var VerificationError = require('./classes/VerificationError');
 
 //Mongoose stuff
 mongoose.Promise = global.Promise;
@@ -74,7 +78,7 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 console.log(chat);
 
                 // Upsert active sticker group with chat reference
-                // There should only ever be one or zero active sticker group at a time
+                // There should only ever be one or zero active sticker groups at a time
                 return StickerGroup.findOneAndUpdate({
                     chat: chat._id,
                     isActive: true
@@ -135,39 +139,46 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
                 .populate({
                     "path": "stickerGroups",
                     "match": { isActive: true },
-                    "options": { limit: 1 }
+                    "options": { limit: 1 },
+                    "populate": {
+                        "path": "stickers"
+                    }
                 }).exec();
         })
         .then(chat => {
             console.log("got chat with active sticker group");
             console.log(chat);
 
-            // Mark sticker group inactive
-            chat.stickerGroups[0].isActive = false;
-            return chat.stickerGroups[0].save();
-        })
-        .then(stickerGroup => {
-            console.log("de-activated active sticker group");
-            console.log(stickerGroup);
+            // Don't generate url if there are no stickers
+            if (chat.stickerGroups[0].stickers.length == 0) {
+                return Promise.reject(new VerificationError('No stickers in sticker group'));
+            }
 
-            // Create new sticker group (upsert just in case)
-            return StickerGroup.findOneAndUpdate({
-                chat: stickerGroup.chat,
-                isActive: true
-            }, {}, { upsert: true, new: true });
+            return StickerGroup.finalize(chat.stickerGroups[0]);
         })
-        .then(stickerGroup => {
-            console.log("Created new active sticker group");
-            console.log(stickerGroup);
+        .then(stickerGroups => {
+            console.log("de-activated active sticker group, made new active group");
+            console.log(stickerGroups);
 
-            var stickerGroupUrl = "https://buy.physicaltelegramstickers.com/g/" + stickerGroup.urlSlug;
+            var stickerGroupUrl = "https://buy.physicaltelegramstickers.com/g/" + stickerGroups.previous.urlSlug;
             return tgHelpers.sendMessage(update.message.chat.id, "Done already? Here is a link to order the stickers your sent me: " + stickerGroupUrl + "\n\nYou like what you see? Maybe someone else does too, that link doesn't have to just be for you!\n\nThanks for taking advantage of me, you make my owner very happy.\n\nThoughts? Ideas? Kind words? Send them to physicaltelegramstickers@gmail.com");
         })
         .then(response => {
             res.end("they done");
         }).catch(err => {
-            console.log("Error: ", err);
-            res.end("Something went wrong");
+            var tgMessage = '';
+            if (err instanceof VerificationError) {
+                tgMessage = "You haven't given me any stickers!";
+            }
+            else {
+                tgMessage = "I'm having some trouble getting you a link, try again in a little bit";
+            }
+
+            return tgHelpers.sendMessage(update.message.chat.id, tgMessage).then(response => {
+                res.end("they informed of error");
+            }).catch(err => {
+                res.end("Something went wrong");
+            });
         });
 
     }
