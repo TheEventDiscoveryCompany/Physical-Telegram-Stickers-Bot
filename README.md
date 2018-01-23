@@ -1,6 +1,11 @@
 # Physical-Telegram-Stickers
 🅱️🅱️🅱️🅱️🅱️🅱️🅱️🅱️🅱️
 
+## Updating submodules
+To update submodules:
+```bash
+git submodule update --init --recursive
+```
 
 ## Setting Bot Webhook
 This bot uses webhooks to retrieve Telegram messages. The webhook needs to be set on Telegram before receiving messages.
