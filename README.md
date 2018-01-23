@@ -2,9 +2,9 @@
 🅱️🅱️🅱️🅱️🅱️🅱️🅱️🅱️🅱️
 
 ## Updating submodules
-To update submodules:
+To install/update submodules:
 ```bash
-git submodule update --init --recursive
+git submodule update --init --recursive --remote
 ```
 
 ## Setting Bot Webhook
