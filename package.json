@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "heroku-prebuild": "git submodule update --init --recursive --remote"
+    "heroku-postbuild": "git submodule update --init --recursive --remote"
   },
   "repository": {
     "type": "git",
