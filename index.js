@@ -149,12 +149,29 @@ app.post('/d7bac4ef-9b4d-47c8-ad47-c33f0e4a5561', function(req, res) {
             console.log("got chat with active sticker group");
             console.log(chat);
 
-            // Don't generate url if there are no stickers
-            if (chat.stickerGroups[0].stickers.length == 0) {
-                return Promise.reject(new VerificationError('No stickers in sticker group'));
-            }
+            // Mark active sticker group as inactive, set url slug
+            // then create new active sticker group
+            return new Promise((resolve, reject) => {
+                // Don't generate url if there are no stickers
+                if (chat.stickerGroups[0].stickers.length == 0) {
+                    reject(new VerificationError('No stickers in sticker group'));
+                }
 
-            return StickerGroup.finalize(chat.stickerGroups[0]);
+                chat.stickerGroups[0].isActive = false;
+                chat.stickerGroups[0].urlSlug = shortid.generate();
+                chat.stickerGroups[0].save(function(err, sg) {
+                    if (err) reject(err);
+        
+                    StickerGroup.findOneAndUpdate({
+                        chat: sg.chat,
+                        isActive: true
+                    }, {}, { upsert: true, new: true }, function(err, doc) {
+                        if (err) reject(err);
+                        // Resolve with first sticker group, we want the url slug
+                        else resolve({ "previous": sg, "current": doc });
+                    });
+                });
+            });
         })
         .then(stickerGroups => {
             console.log("de-activated active sticker group, made new active group");
