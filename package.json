@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "heroku-postbuild": "git submodule update --init --recursive --remote"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +18,7 @@
   },
   "homepage": "https://github.com/TheEventDiscoveryCompany/Physical-Telegram-Stickers#readme",
   "dependencies": {
+    "physical-telegram-stickers-models": "git+https://ba5dadee6519c4ce91d06dcac28ff78229d1a5e3:x-oauth-basic@github.com/TheEventDiscoveryCompany/Physical-Telegram-Stickers-Models.git",
     "aws-sdk": "^2.181.0",
     "axios": "^0.17.1",
     "body-parser": "^1.18.2",

@@ -1,18 +1,9 @@
 # Physical-Telegram-Stickers
 🅱️🅱️🅱️🅱️🅱️🅱️🅱️🅱️🅱️
 
-## Submodules
+## NPM Modules with Private Repos
 
-To install/update submodules:
-```bash
-git submodule update --init --recursive --remote
-```
-
-### Deployment
-
-In order for submodule deployment for private repos to work on Heroku, an oauth token needs to be passed in the URL of the submodule git repo. It's only possible for an oauth token to be tied to a personal account.
-
-If a new token needs to be generated, generate a new token by following the instructions [here](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/) and 
+In order to deploy private repos as modules through npm, an oauth token needs to be passed in the git repo URL for the `physical-telegram-stickers-models` module. It's only possible for an oauth token to be tied to a personal account on Github, so if a new token needs to be generated, generate one by following the instructions [here](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/).
 
 
 ## Setting Bot Webhook

@@ -24,9 +24,9 @@ var VerificationError = require('./classes/VerificationError');
 
 //Mongoose stuff
 mongoose.Promise = global.Promise;
-var Chat = require('./models/mongo/Chat'),
-    StickerGroup = require('./models/mongo/StickerGroup'),
-    Sticker = require('./models/mongo/Sticker');
+var Chat = require('./node_modules/physical-telegram-stickers-models/mongo/Chat'),
+    StickerGroup = require('./node_modules/physical-telegram-stickers-models/mongo/StickerGroup'),
+    Sticker = require('./node_modules/physical-telegram-stickers-models/mongo/Sticker');
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
