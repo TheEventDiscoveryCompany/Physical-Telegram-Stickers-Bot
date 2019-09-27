@@ -1,5 +1,5 @@
 # Physical-Telegram-Stickers
-A chat bot for Telegram that will print and mail you any Telegram stickers you send it!
+A chat bot for Telegram that will print and mail you any stickers you send it! 
 
 ## Setting Bot Webhook
 This bot uses webhooks to retrieve Telegram messages. The webhook needs to be set on Telegram before receiving messages.
