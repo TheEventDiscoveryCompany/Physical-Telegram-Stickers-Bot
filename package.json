@@ -20,7 +20,7 @@
   "dependencies": {
     "physical-telegram-stickers-models": "git+https://github.com/TheEventDiscoveryCompany/Physical-Telegram-Stickers-Models.git",
     "aws-sdk": "^2.181.0",
-    "axios": "^0.18.1",
+    "axios": "^0.21.1",
     "body-parser": "^1.18.2",
     "dotenv": "^4.0.0",
     "express": "^4.16.2",
